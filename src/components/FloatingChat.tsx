@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Draggable from "react-draggable";
 import { useRouter } from "next/navigation";
-import { Mic, X, Send, Maximize2, Minimize2, MessageSquare, Volume2, VolumeX, List, Plus } from "lucide-react";
+import { Mic, X, Send, Maximize2, Minimize2, MessageSquare, Volume2, VolumeX, List, Plus, Pencil, Trash2 } from "lucide-react";
 
 export default function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,6 +18,8 @@ export default function FloatingChat() {
   const sessionIdRef = useRef<string | null>(null);
   const [sessions, setSessions] = useState<{id: string, title: string, updatedAt: string}[]>([]);
   const [showSessions, setShowSessions] = useState(false);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -167,6 +169,31 @@ export default function FloatingChat() {
     setShowSessions(false);
   };
 
+  const saveEditSession = async (id: string) => {
+    if (!editTitle.trim()) {
+      setEditingSessionId(null);
+      return;
+    }
+    await fetch('/api/chat/sessions', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, title: editTitle.trim() })
+    });
+    setSessions(prev => prev.map(s => s.id === id ? { ...s, title: editTitle.trim() } : s));
+    setEditingSessionId(null);
+  };
+
+  const deleteSession = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("¿Eliminar esta conversación?")) return;
+    await fetch(`/api/chat/sessions?id=${id}`, { method: 'DELETE' });
+    setSessions(prev => prev.filter(s => s.id !== id));
+    if (sessionId === id) {
+      setSessionId(null);
+      sessionIdRef.current = null;
+    }
+  };
+
   if (!isOpen) {
     return (
       <Draggable nodeRef={bubbleRef} bounds="parent">
@@ -290,14 +317,47 @@ export default function FloatingChat() {
               <Plus size={16} /> Nueva Conversación
             </button>
             {sessions.map(s => (
-              <button 
-                key={s.id}
-                onClick={() => handleSelectSession(s.id)}
-                style={{ padding: '1rem', borderBottom: '1px solid var(--border)', backgroundColor: sessionId === s.id ? 'var(--secondary)' : 'transparent', color: sessionId === s.id ? 'white' : 'var(--foreground)', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'block', width: '100%' }}
+              <div 
+                key={s.id} 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  borderBottom: '1px solid var(--border)', 
+                  backgroundColor: sessionId === s.id ? 'var(--secondary)' : 'transparent',
+                  color: sessionId === s.id ? 'white' : 'var(--foreground)'
+                }}
               >
-                <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{new Date(s.updatedAt).toLocaleDateString()}</div>
-              </button>
+                {editingSessionId === s.id ? (
+                  <input 
+                    type="text"
+                    value={editTitle}
+                    onChange={e => setEditTitle(e.target.value)}
+                    onBlur={() => saveEditSession(s.id)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveEditSession(s.id); }}
+                    autoFocus
+                    style={{ flex: 1, padding: '1rem', background: 'transparent', border: 'none', color: 'inherit', outline: 'none', fontWeight: 500 }}
+                  />
+                ) : (
+                  <button 
+                    onClick={() => handleSelectSession(s.id)}
+                    style={{ flex: 1, padding: '1rem', background: 'transparent', color: 'inherit', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'block', overflow: 'hidden' }}
+                  >
+                    <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{new Date(s.updatedAt).toLocaleDateString()}</div>
+                  </button>
+                )}
+                
+                {editingSessionId !== s.id && (
+                  <div style={{ display: 'flex', gap: '0.5rem', paddingRight: '1rem' }}>
+                    <button onClick={(e) => { e.stopPropagation(); setEditingSessionId(s.id); setEditTitle(s.title); }} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', opacity: 0.7 }}>
+                      <Pencil size={14} />
+                    </button>
+                    <button onClick={(e) => deleteSession(s.id, e)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', opacity: 0.7 }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}

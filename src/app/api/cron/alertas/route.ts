@@ -12,15 +12,14 @@ export async function GET(req: Request) {
     }
 
     // Usaremos el mismo host IMAP pero asumiendo que es cPanel/estándar donde IMAP/SMTP comparten host.
-    // Si es Gmail/Outlook, se debe configurar específicamente, pero esto sirve para el prototipo cPanel.
-    let smtpHost = config.emailHost;
-    if (smtpHost?.includes('imap.gmail.com')) smtpHost = 'smtp.gmail.com';
-    if (smtpHost?.includes('outlook.office365.com')) smtpHost = 'smtp.office365.com';
+    let smtpHost: string = config.emailHost || '';
+    if (smtpHost.includes('imap.gmail.com')) smtpHost = 'smtp.gmail.com';
+    if (smtpHost.includes('outlook.office365.com')) smtpHost = 'smtp.office365.com';
 
     const transporter = nodemailer.createTransport({
       host: smtpHost,
-      port: smtpHost?.includes('gmail') ? 465 : 587,
-      secure: smtpHost?.includes('gmail') ? true : false,
+      port: smtpHost.includes('gmail') ? 465 : 587,
+      secure: smtpHost.includes('gmail') ? true : false,
       auth: {
         user: config.emailUser,
         pass: config.emailPassword

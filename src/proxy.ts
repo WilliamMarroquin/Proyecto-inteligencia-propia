@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const isAuth = request.cookies.has('finasist_auth');
   const isLoginPage = request.nextUrl.pathname === '/login';
   

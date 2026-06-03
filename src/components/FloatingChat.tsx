@@ -2,13 +2,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import Draggable from "react-draggable";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Mic, X, Send, Maximize2, Minimize2, MessageSquare, Volume2, VolumeX, List, Plus, Pencil, Trash2 } from "lucide-react";
 
 export default function FloatingChat() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false); // To toggle between large window and small bubble while open
   const [messages, setMessages] = useState<{id?: string, role: string, content: string}[]>([]);
+  
+  if (pathname === '/login') return null;
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);

@@ -7,6 +7,8 @@ import { LayoutDashboard, Database, Settings, ShieldCheck, FileSpreadsheet, User
 export default function TopNav() {
   const pathname = usePathname();
 
+  if (pathname === '/login') return null;
+
   const navItems = [
     { name: "Dashboard", href: "/", icon: <LayoutDashboard size={20} /> },
     { name: "Cartera", href: "/cartera", icon: <Users size={20} /> },

@@ -112,29 +112,22 @@ export default function AsistentePro() {
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'es-ES';
     
-    // Algotirmo avanzado para seleccionar la voz más humana posible
     const voices = synthRef.current.getVoices();
-    
-    // 1. Buscar voces "Neural" de Microsoft (Edge las tiene integradas)
     let bestVoice = voices.find(v => v.lang.startsWith('es') && v.name.includes('Neural'));
-    
-    // 2. Si no hay Neural, buscar Premium o Google
-    if (!bestVoice) {
-      bestVoice = voices.find(v => v.lang.startsWith('es') && (v.name.includes('Premium') || v.name.includes('Google')));
-    }
-    
-    // 3. Fallback a cualquier voz en español
-    if (!bestVoice) {
-      bestVoice = voices.find(v => v.lang.startsWith('es'));
-    }
-    
-    if (bestVoice) {
-      utterance.voice = bestVoice;
-    }
+    if (!bestVoice) bestVoice = voices.find(v => v.lang.startsWith('es') && (v.name.includes('Premium') || v.name.includes('Google')));
+    if (!bestVoice) bestVoice = voices.find(v => v.lang.startsWith('es'));
+    if (bestVoice) utterance.voice = bestVoice;
 
     utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      // Automatically start listening again after finishing speaking
+      setTimeout(() => startListening(), 500); 
+    };
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      startListening();
+    };
 
     synthRef.current.speak(utterance);
   };
@@ -143,59 +136,52 @@ export default function AsistentePro() {
     <div style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: '#050B14',
-      backgroundImage: 'radial-gradient(circle at center, #0B192C 0%, #050B14 100%)',
+      backgroundColor: '#000000',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 10000,
       color: 'white',
-      fontFamily: 'sans-serif'
+      fontFamily: 'sans-serif',
+      overflow: 'hidden'
     }}>
       
       {/* Título Superior */}
-      <div style={{ position: 'absolute', top: '2rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2rem', color: '#3B82F6', textShadow: '0 0 20px rgba(59, 130, 246, 0.5)', margin: 0 }}>
-          Asistente Pro
+      <div style={{ position: 'absolute', top: '3rem', textAlign: 'center', zIndex: 20 }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 300, letterSpacing: '2px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>
+          ÓRBITA
         </h1>
-        <p style={{ color: 'var(--secondary)', marginTop: '0.5rem', fontSize: '1.2rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem', fontSize: '1rem', fontWeight: 300 }}>
           {isListening ? "Escuchando..." : isSpeaking ? "Hablando..." : "Pausado"}
         </p>
       </div>
 
-      {/* Orbe Brillante Central */}
+      {/* Orbe Siri-style */}
       <div style={{
         position: 'relative',
-        width: '250px',
-        height: '250px',
+        width: '300px',
+        height: '300px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        filter: 'blur(15px) contrast(2)',
+        opacity: isSpeaking ? 1 : isListening ? 0.7 : 0.3,
+        transform: isSpeaking ? 'scale(1.2)' : 'scale(1)',
+        transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
-        {/* Glow animado */}
-        <div style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          borderRadius: '50%',
-          background: isSpeaking ? 'radial-gradient(circle, rgba(139,92,246,0.8) 0%, rgba(59,130,246,0) 70%)' : 
-                      isListening ? 'radial-gradient(circle, rgba(16,185,129,0.8) 0%, rgba(16,185,129,0) 70%)' :
-                      'radial-gradient(circle, rgba(100,116,139,0.5) 0%, rgba(100,116,139,0) 70%)',
-          animation: isSpeaking ? 'pulse 1s infinite alternate' : 
-                     isListening ? 'pulse 2s infinite alternate' : 'none',
-          transition: 'all 0.5s ease'
-        }} />
+        <div className="siri-blob siri-blob-1" style={{ animationPlayState: (isSpeaking || isListening) ? 'running' : 'paused' }} />
+        <div className="siri-blob siri-blob-2" style={{ animationPlayState: (isSpeaking || isListening) ? 'running' : 'paused' }} />
+        <div className="siri-blob siri-blob-3" style={{ animationPlayState: (isSpeaking || isListening) ? 'running' : 'paused' }} />
         
-        {/* Bola blanca central */}
+        {/* Core blanco */}
         <div style={{
           position: 'absolute',
-          width: '100px',
-          height: '100px',
-          backgroundColor: '#FFFFFF',
+          width: '80px',
+          height: '80px',
+          background: 'white',
           borderRadius: '50%',
-          boxShadow: '0 0 50px #FFFFFF',
-          animation: isSpeaking ? 'breath 1.5s infinite alternate' : 'none',
+          boxShadow: '0 0 50px white',
           zIndex: 10
         }} />
       </div>
@@ -203,17 +189,19 @@ export default function AsistentePro() {
       {/* Textos (Transcripción / Respuesta) */}
       <div style={{ 
         position: 'absolute', 
-        bottom: '8rem', 
+        bottom: '10rem', 
         width: '80%', 
         maxWidth: '800px', 
         textAlign: 'center',
-        minHeight: '80px'
+        zIndex: 20
       }}>
         <p style={{ 
-          fontSize: '1.4rem', 
+          fontSize: '1.5rem', 
+          fontWeight: 300,
           lineHeight: '1.6', 
-          color: isListening ? '#10b981' : '#E2E8F0',
-          transition: 'color 0.3s'
+          color: 'rgba(255,255,255,0.9)',
+          transition: 'opacity 0.3s',
+          opacity: (transcript || aiResponse) ? 1 : 0
         }}>
           {isListening && transcript ? `"${transcript}"` : aiResponse}
         </p>
@@ -224,64 +212,87 @@ export default function AsistentePro() {
         position: 'absolute', 
         bottom: '3rem', 
         display: 'flex', 
-        gap: '2rem' 
+        gap: '1.5rem',
+        zIndex: 20
       }}>
         <button 
           onClick={interruptAndListen}
           style={{
-            backgroundColor: '#EAB308',
-            color: '#422006',
-            border: 'none',
-            padding: '1rem 3rem',
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            backdropFilter: 'blur(10px)',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.2)',
+            padding: '1rem 2rem',
             borderRadius: '999px',
-            fontSize: '1.2rem',
-            fontWeight: 'bold',
+            fontSize: '1.1rem',
             cursor: 'pointer',
-            boxShadow: '0 0 20px rgba(234, 179, 8, 0.4)',
-            transition: 'transform 0.2s',
+            transition: 'all 0.3s ease',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
         >
-          <Mic size={24} /> Interrumpir
+          <Mic size={20} /> Interrumpir
         </button>
 
         <button 
           onClick={stopListeningAndExit}
           style={{
-            backgroundColor: '#EF4444',
-            color: 'white',
-            border: 'none',
-            padding: '1rem 3rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+            backdropFilter: 'blur(10px)',
+            color: '#fca5a5',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            padding: '1rem 2rem',
             borderRadius: '999px',
-            fontSize: '1.2rem',
-            fontWeight: 'bold',
+            fontSize: '1.1rem',
             cursor: 'pointer',
-            boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)',
-            transition: 'transform 0.2s',
+            transition: 'all 0.3s ease',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.4)'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
         >
-          <X size={24} /> Salir
+          <X size={20} /> Salir
         </button>
       </div>
 
-      {/* Definir animaciones en CSS */}
+      {/* Estilos Globales para el Orbe */}
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 0.6; }
-          100% { transform: scale(1.3); opacity: 1; }
+        .siri-blob {
+          position: absolute;
+          width: 200px;
+          height: 200px;
+          border-radius: 40% 60% 70% 30% / 40% 40% 60% 50%;
+          mix-blend-mode: screen;
+          animation: blob-spin 8s linear infinite;
         }
-        @keyframes breath {
-          0% { transform: scale(0.95); }
-          100% { transform: scale(1.05); }
+        .siri-blob-1 {
+          background: linear-gradient(135deg, #FF3366, #FF9933);
+          animation-direction: alternate;
+        }
+        .siri-blob-2 {
+          background: linear-gradient(135deg, #33CCFF, #3366FF);
+          width: 220px;
+          height: 220px;
+          animation-delay: -2s;
+          animation-direction: alternate-reverse;
+        }
+        .siri-blob-3 {
+          background: linear-gradient(135deg, #9933FF, #FF33CC);
+          width: 180px;
+          height: 180px;
+          animation-delay: -4s;
+        }
+        
+        @keyframes blob-spin {
+          0% { border-radius: 40% 60% 70% 30% / 40% 40% 60% 50%; transform: rotate(0deg) scale(1); }
+          34% { border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; transform: rotate(120deg) scale(1.1); }
+          67% { border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; transform: rotate(240deg) scale(0.9); }
+          100% { border-radius: 40% 60% 70% 30% / 40% 40% 60% 50%; transform: rotate(360deg) scale(1); }
         }
       `}} />
     </div>

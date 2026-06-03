@@ -15,6 +15,7 @@ export default function FloatingChat() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
   const [sessions, setSessions] = useState<{id: string, title: string, updatedAt: string}[]>([]);
   const [showSessions, setShowSessions] = useState(false);
   
@@ -22,24 +23,20 @@ export default function FloatingChat() {
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
-  // Sound effect for incoming messages
   const playBop = () => {
     try {
-      const audio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAQABAAAA"); // Tiny silent fallback or real bop could go here. We'll use a standard browser beep approach using AudioContext if we wanted, but simplest is just trying to use the Speech API with a short 'bop' or an actual audio file. Since we don't have an asset, we'll use a tiny synthesized oscillator bop.
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5 note
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
       gain.gain.setValueAtTime(0.1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.1);
       osc.start();
       osc.stop(ctx.currentTime + 0.1);
-    } catch(e) {
-      // Ignore audio context errors if user hasn't interacted
-    }
+    } catch(e) {}
   };
 
   useEffect(() => {
@@ -79,16 +76,11 @@ export default function FloatingChat() {
           const transcript = event.results[0][0].transcript;
           setInput(transcript);
           setIsListening(false);
-          sendMessage(undefined, transcript);
+          sendMessage(undefined, transcript, sessionIdRef.current);
         };
 
-        recognitionRef.current.onerror = (event: any) => {
-          setIsListening(false);
-        };
-
-        recognitionRef.current.onend = () => {
-          setIsListening(false);
-        };
+        recognitionRef.current.onerror = () => setIsListening(false);
+        recognitionRef.current.onend = () => setIsListening(false);
       }
     }
   }, []);
@@ -120,14 +112,14 @@ export default function FloatingChat() {
     utterance.lang = 'es-ES';
     
     const voices = synthRef.current.getVoices();
-    let bestVoice = voices.find(v => v.lang.startsWith('es') && (v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Google')));
+    let bestVoice = voices.find(v => v.lang.startsWith('es') && (v.name.includes('Neural') || v.name.includes('Premium') || v.name.includes('Google')));
     if (!bestVoice) bestVoice = voices.find(v => v.lang.startsWith('es'));
     if (bestVoice) utterance.voice = bestVoice;
 
     synthRef.current.speak(utterance);
   };
 
-  const sendMessage = async (e?: React.FormEvent, customMsg?: string) => {
+  const sendMessage = async (e?: React.FormEvent, customMsg?: string, activeSessionId?: string | null) => {
     if (e) e.preventDefault();
     const msgToSend = customMsg || input.trim();
     if (!msgToSend || loading) return;
@@ -135,17 +127,20 @@ export default function FloatingChat() {
     if (!customMsg) setInput("");
     setMessages(prev => [...prev, { role: 'user', content: msgToSend }]);
     setLoading(true);
+    
+    const sessionToUse = activeSessionId !== undefined ? activeSessionId : sessionId;
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msgToSend, sessionId })
+        body: JSON.stringify({ message: msgToSend, sessionId: sessionToUse })
       });
       const data = await res.json();
       
-      if (data.sessionId && data.sessionId !== sessionId) {
+      if (data.sessionId && data.sessionId !== sessionToUse) {
         setSessionId(data.sessionId);
+        sessionIdRef.current = data.sessionId;
       }
       
       if (data.reply) {
@@ -164,6 +159,13 @@ export default function FloatingChat() {
   const bubbleRef = useRef(null);
   const panelRef = useRef(null);
 
+  // Helper para cambiar de sesion
+  const handleSelectSession = (id: string | null) => {
+    setSessionId(id);
+    sessionIdRef.current = id;
+    setShowSessions(false);
+  };
+
   if (!isOpen) {
     return (
       <Draggable nodeRef={bubbleRef} bounds="parent">
@@ -174,7 +176,6 @@ export default function FloatingChat() {
           zIndex: 9999,
           cursor: 'grab'
         }}>
-          {/* Botón de Chat Escrito */}
           <button 
             onClick={() => setIsOpen(true)}
             style={{
@@ -201,9 +202,8 @@ export default function FloatingChat() {
             <MessageSquare size={24} />
           </button>
 
-          {/* Botón Principal (Orbe Hablado) */}
           <button 
-            onClick={() => router.push('/asistente')}
+            onClick={() => router.push(sessionId ? \`/asistente?sessionId=\${sessionId}\` : '/asistente')}
             style={{
               width: '65px',
               height: '65px',
@@ -283,7 +283,7 @@ export default function FloatingChat() {
         {!isMinimized && showSessions && (
           <div style={{ flex: 1, overflowY: 'auto', backgroundColor: 'var(--background)', display: 'flex', flexDirection: 'column' }}>
             <button 
-              onClick={() => { setSessionId(null); setShowSessions(false); }}
+              onClick={() => handleSelectSession(null)}
               style={{ padding: '1rem', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--primary)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
             >
               <Plus size={16} /> Nueva Conversación
@@ -291,7 +291,7 @@ export default function FloatingChat() {
             {sessions.map(s => (
               <button 
                 key={s.id}
-                onClick={() => { setSessionId(s.id); setShowSessions(false); }}
+                onClick={() => handleSelectSession(s.id)}
                 style={{ padding: '1rem', borderBottom: '1px solid var(--border)', backgroundColor: sessionId === s.id ? 'var(--secondary)' : 'transparent', color: sessionId === s.id ? 'white' : 'var(--foreground)', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'block', width: '100%' }}
               >
                 <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>

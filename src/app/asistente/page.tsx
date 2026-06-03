@@ -11,11 +11,20 @@ export default function AsistentePro() {
   const [transcript, setTranscript] = useState("");
   const [aiResponse, setAiResponse] = useState("¡Hola! Soy tu Asistente Pro de Órbita Enterprise. Estoy escuchando...");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
   
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
 
   useEffect(() => {
+    // Leer sessionId de la URL si venimos del chat flotante
+    const urlParams = new URLSearchParams(window.location.search);
+    const existingSessionId = urlParams.get('sessionId');
+    if (existingSessionId) {
+      setSessionId(existingSessionId);
+      sessionIdRef.current = existingSessionId;
+    }
+
     if (typeof window !== 'undefined') {
       synthRef.current = window.speechSynthesis;
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -35,7 +44,8 @@ export default function AsistentePro() {
           
           if (event.results[0].isFinal) {
             setIsListening(false);
-            handleUserMessage(currentTranscript);
+            // PASAR EL REF, NO EL ESTADO (para evitar el bug del closure)
+            handleUserMessage(currentTranscript, sessionIdRef.current);
           }
         };
 
@@ -86,18 +96,20 @@ export default function AsistentePro() {
     startListening();
   };
 
-  const handleUserMessage = async (message: string) => {
+  // Se recibe por parámetro para garantizar que se use el actual
+  const handleUserMessage = async (message: string, currentSession: string | null) => {
     setAiResponse("Pensando...");
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, sessionId })
+        body: JSON.stringify({ message, sessionId: currentSession })
       });
       const data = await res.json();
       
-      if (data.sessionId && data.sessionId !== sessionId) {
+      if (data.sessionId && data.sessionId !== currentSession) {
         setSessionId(data.sessionId);
+        sessionIdRef.current = data.sessionId;
       }
       
       if (data.reply) {

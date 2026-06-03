@@ -16,7 +16,7 @@ export default async function ArchivosPage() {
         <h1 className="title">Respaldos en la Nube</h1>
         <p style={{ color: 'var(--secondary)' }}>
           Aquí encontrarás todos los archivos Excel extraídos de los correos del banco.
-          Estos archivos están almacenados de forma segura en la bóveda de Cloudinary.
+          Estos archivos están almacenados de forma segura y encriptada en los servidores en la nube.
         </p>
       </div>
 

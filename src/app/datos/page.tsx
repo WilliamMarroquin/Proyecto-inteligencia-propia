@@ -47,7 +47,7 @@ export default async function DatosPage() {
                   <td style={{ padding: '1rem', fontFamily: 'monospace', fontSize: '1.1rem' }}>
                     Q{pago.monto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
-                  <td style={{ padding: '1rem', color: 'var(--secondary)' }}>{new Date(pago.fecha).toLocaleDateString()}</td>
+                  <td style={{ padding: '1rem', color: 'var(--secondary)' }}>{new Date(pago.fecha).toLocaleDateString('es-ES')}</td>
                   <td style={{ padding: '1rem' }}>
                     <span style={{ 
                       display: 'inline-flex', alignItems: 'center', gap: '4px',

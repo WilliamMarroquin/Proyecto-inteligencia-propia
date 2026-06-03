@@ -21,7 +21,7 @@ export default function ExportButton({ pagos }: { pagos: any[] }) {
     const tableData = pagos.map(pago => [
       pago.nombreCliente,
       `Q${pago.monto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      new Date(pago.fecha).toLocaleDateString(),
+      new Date(pago.fecha).toLocaleDateString('es-ES'),
       pago.estado
     ]);
 

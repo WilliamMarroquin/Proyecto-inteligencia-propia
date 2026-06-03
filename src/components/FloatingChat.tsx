@@ -343,7 +343,7 @@ export default function FloatingChat() {
                     style={{ flex: 1, padding: '1rem', background: 'transparent', color: 'inherit', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'block', overflow: 'hidden' }}
                   >
                     <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{new Date(s.updatedAt).toLocaleDateString()}</div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{new Date(s.updatedAt).toLocaleDateString('es-ES')}</div>
                   </button>
                 )}
                 

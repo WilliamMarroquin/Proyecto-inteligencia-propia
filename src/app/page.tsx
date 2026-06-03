@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { TrendingUp, Users, DollarSign, Activity } from "lucide-react";
 import DashboardChart from "@/components/DashboardChart";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   // 1. Fetch KPI Data
   const totalPagos = await prisma.pago.count();

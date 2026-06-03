@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { ArrowLeft, Database, CheckCircle2, Clock } from "lucide-react";
 import ExportButton from "@/components/ExportButton";
 
+export const dynamic = "force-dynamic";
+
 export default async function DatosPage() {
   const pagos = await prisma.pago.findMany({
     orderBy: { createdAt: 'desc' }

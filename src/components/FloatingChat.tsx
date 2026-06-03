@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Draggable from "react-draggable";
+import { useRouter } from "next/navigation";
 import { Mic, X, Send, Maximize2, Minimize2, MessageSquare, Volume2, VolumeX } from "lucide-react";
 
 export default function FloatingChat() {
@@ -139,6 +140,7 @@ export default function FloatingChat() {
     }
   };
 
+  const router = useRouter();
   const bubbleRef = useRef(null);
   const panelRef = useRef(null);
 
@@ -152,26 +154,55 @@ export default function FloatingChat() {
           zIndex: 9999,
           cursor: 'grab'
         }}>
+          {/* Botón de Chat Escrito */}
           <button 
             onClick={() => setIsOpen(true)}
             style={{
-              width: '60px',
-              height: '60px',
+              position: 'absolute',
+              bottom: '75px',
+              right: '0px',
+              width: '50px',
+              height: '50px',
               borderRadius: '50%',
-              backgroundColor: 'var(--primary)',
-              color: 'white',
-              border: 'none',
-              boxShadow: '0 10px 25px -5px rgba(139, 92, 246, 0.5)',
+              backgroundColor: 'var(--card-bg)',
+              color: 'var(--primary)',
+              border: '2px solid var(--primary)',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               transition: 'transform 0.2s',
             }}
+            title="Chat Escrito"
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <Mic size={28} />
+            <MessageSquare size={24} />
+          </button>
+
+          {/* Botón Principal (Orbe Hablado) */}
+          <button 
+            onClick={() => router.push('/asistente')}
+            style={{
+              width: '65px',
+              height: '65px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--primary)',
+              color: 'white',
+              border: 'none',
+              boxShadow: '0 10px 25px -5px rgba(139, 92, 246, 0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+            }}
+            title="Asistente de Voz Pro"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Mic size={32} />
           </button>
         </div>
       </Draggable>

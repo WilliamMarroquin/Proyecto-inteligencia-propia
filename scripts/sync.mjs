@@ -1,4 +1,4 @@
-import 'dotenv/config';
+
 import { ImapFlow } from 'imapflow';
 import { PrismaClient } from '@prisma/client';
 import { simpleParser } from 'mailparser';
@@ -50,11 +50,10 @@ function parseExcelBuffer(buffer) {
   return pagos;
 }
 
-async function run() {
+export async function runSync() {
   const config = await prisma.configuracion.findFirst();
   if (!config) {
-    console.error("No hay configuracion.");
-    process.exit(1);
+    throw new Error("No hay configuracion.");
   }
 
   const client = new ImapFlow({
@@ -176,17 +175,24 @@ async function run() {
                 }
             }
         }
-        console.log(JSON.stringify({ success: true, message: `Sincronización completada. Se insertaron ${pagosInsertados} pagos.` }));
+        
+        return { success: true, message: `Sincronización completada. Se insertaron ${pagosInsertados} pagos.` };
     } finally {
         lock.release();
     }
   } catch (err) {
     console.error("IMAP Error:", err.message);
-    process.exit(1);
+    throw err;
   } finally {
     if (client && client.usable) await client.logout();
     await prisma.$disconnect();
   }
 }
 
-run();
+// Para ejecución local por child_process
+if (process.argv[1] && process.argv[1].includes('sync.mjs')) {
+    runSync().then(res => console.log(JSON.stringify(res))).catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
+}

@@ -203,7 +203,7 @@ export default function FloatingChat() {
           </button>
 
           <button 
-            onClick={() => router.push(sessionId ? \`/asistente?sessionId=\${sessionId}\` : '/asistente')}
+            onClick={() => router.push(sessionId ? `/asistente?sessionId=${sessionId}` : '/asistente')}
             style={{
               width: '65px',
               height: '65px',
@@ -260,8 +260,8 @@ export default function FloatingChat() {
           cursor: 'grab'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
-            <MessageSquare size={18} />
-            Asistente Órbita
+            <img src="/logo.png" alt="Finasist AI Logo" style={{ height: '24px', width: '24px', borderRadius: '50%', objectFit: 'cover', backgroundColor: 'white' }} />
+            Finasist AI
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button onClick={() => setShowSessions(!showSessions)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }} title="Historial">

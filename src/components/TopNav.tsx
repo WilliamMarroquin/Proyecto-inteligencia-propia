@@ -33,8 +33,8 @@ export default function TopNav() {
       }}>
         {/* Logo */}
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'var(--foreground)' }}>
-          <ShieldCheck size={28} color="var(--primary)" />
-          <span style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.5px' }}>Órbita Enterprise</span>
+          <img src="/logo.png" alt="Finasist AI Logo" style={{ height: '40px', objectFit: 'contain' }} />
+          <span style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.5px' }}>FINASIST AI</span>
         </Link>
 
         {/* Navigation */}

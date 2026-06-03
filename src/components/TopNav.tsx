@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, MessageSquare, Database, Settings, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Database, Settings, ShieldCheck, FileSpreadsheet } from "lucide-react";
 
 export default function TopNav() {
   const pathname = usePathname();
 
   const navItems = [
     { name: "Dashboard", href: "/", icon: <LayoutDashboard size={20} /> },
+    { name: "Archivos", href: "/archivos", icon: <FileSpreadsheet size={20} /> },
     { name: "Datos", href: "/datos", icon: <Database size={20} /> },
     { name: "Ajustes", href: "/configuracion", icon: <Settings size={20} /> },
   ];

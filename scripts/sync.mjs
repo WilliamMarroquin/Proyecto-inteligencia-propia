@@ -1,9 +1,15 @@
+import 'dotenv/config';
 import { ImapFlow } from 'imapflow';
 import { PrismaClient } from '@prisma/client';
 import { simpleParser } from 'mailparser';
 import * as xlsx from 'xlsx';
-import fs from 'fs';
-import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const prisma = new PrismaClient();
 
@@ -106,7 +112,7 @@ async function run() {
                         if (att.filename && att.filename.endsWith('.xlsx')) {
                             console.log(`Procesando Excel: ${att.filename}`);
                             
-                            // RESPALDO AUTOMÁTICO
+                            // RESPALDO EN LA NUBE (Cloudinary)
                             try {
                                 const now = new Date();
                                 const year = now.getFullYear().toString();
@@ -114,16 +120,35 @@ async function run() {
                                 const day = now.getDate().toString().padStart(2, '0');
                                 const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
                                 
-                                const backupDir = path.join(process.cwd(), 'respaldos_excel', year, month);
-                                fs.mkdirSync(backupDir, { recursive: true });
+                                const safeName = `Reporte_${year}${month}${day}_${time}`;
                                 
-                                const safeName = `Reporte_${year}${month}${day}_${time}.xlsx`;
-                                const backupPath = path.join(backupDir, safeName);
+                                console.log(`Subiendo Excel a Cloudinary: ${safeName}...`);
                                 
-                                fs.writeFileSync(backupPath, att.content);
-                                console.log(`Excel respaldado en: ${backupPath}`);
+                                const uploadResult = await new Promise((resolve, reject) => {
+                                    const uploadStream = cloudinary.uploader.upload_stream(
+                                        {
+                                            resource_type: 'raw',
+                                            folder: 'orbita-respaldos',
+                                            public_id: safeName + '.xlsx'
+                                        },
+                                        (error, result) => {
+                                            if (error) reject(error);
+                                            else resolve(result);
+                                        }
+                                    );
+                                    uploadStream.end(att.content);
+                                });
+
+                                console.log(`Excel subido exitosamente: ${uploadResult.secure_url}`);
+                                
+                                await prisma.respaldoExcel.create({
+                                    data: {
+                                        nombre: safeName + '.xlsx',
+                                        url: uploadResult.secure_url
+                                    }
+                                });
                             } catch (backupErr) {
-                                console.error(`Error al respaldar el Excel:`, backupErr.message);
+                                console.error(`Error al subir el Excel a Cloudinary:`, backupErr.message);
                             }
 
                             const pagosData = parseExcelBuffer(att.content);

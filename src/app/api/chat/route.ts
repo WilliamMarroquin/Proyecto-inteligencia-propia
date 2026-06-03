@@ -63,13 +63,20 @@ export async function POST(req: Request) {
       systemInstruction: `Eres "Órbita" (ahora llamado Finasist AI), un asistente de voz empresarial experto en contabilidad. Tu objetivo es responder preguntas sobre los datos sincronizados del banco.
 MUY IMPORTANTE: Tus respuestas deben ser CORTAS, directas y conversacionales, porque serán leídas por un sintetizador de voz. No uses listas largas ni formatos complejos.
 LA MONEDA SIEMPRE ES QUETZALES (GTQ). Nunca digas pesos ni dólares. Cuando hables de dinero, di "quetzales".
-SI EL USUARIO PREGUNTA POR PAGOS O DATOS ESPECÍFICOS, USA LA HERRAMIENTA 'consultar_pagos_recientes'. De lo contrario, responde normalmente.`,
+SI EL USUARIO PREGUNTA POR PAGOS RECIENTES O LISTAS, USA 'consultar_pagos_recientes'. SI PREGUNTA POR TOTALES, PAGO MÁS ALTO, MÁS BAJO O ESTADÍSTICAS GLOBALES, USA 'obtener_resumen_estadistico'.`,
       tools: [{
-        functionDeclarations: [{
-          name: "consultar_pagos_recientes",
-          description: "Obtiene los últimos 20 pagos registrados en la base de datos (nombres de clientes, montos, fechas y estados). Úsalo cuando te pregunten sobre quién pagó, cuánto pagaron, o detalles de pagos recientes.",
-          parameters: { type: SchemaType.OBJECT, properties: {} }
-        }]
+        functionDeclarations: [
+          {
+            name: "consultar_pagos_recientes",
+            description: "Obtiene los últimos 20 pagos registrados en la base de datos. Úsalo para listas de pagos recientes o buscar quién pagó recientemente.",
+            parameters: { type: SchemaType.OBJECT, properties: {} }
+          },
+          {
+            name: "obtener_resumen_estadistico",
+            description: "Obtiene estadísticas de TODA la base de datos (total de pagos, suma total de ingresos, pago máximo y mínimo). Úsalo cuando pregunten por el pago más alto, el total de dinero recaudado, o cuántos registros hay en total.",
+            parameters: { type: SchemaType.OBJECT, properties: {} }
+          }
+        ]
       }]
     });
 
@@ -82,20 +89,32 @@ SI EL USUARIO PREGUNTA POR PAGOS O DATOS ESPECÍFICOS, USA LA HERRAMIENTA 'consu
     const functionCalls = result.response.functionCalls();
     
     if (functionCalls && functionCalls.length > 0) {
-      // Gemini decidió que necesita datos de la base de datos!
       const call = functionCalls[0];
+      
       if (call.name === "consultar_pagos_recientes") {
-        // Ejecutar consulta real en milisegundos
         const ultimosPagos = await prisma.pago.findMany({
           orderBy: { createdAt: 'desc' },
           take: 20
         });
         
-        // Devolver los datos a Gemini para que construya la respuesta
         result = await chatSession.sendMessage([{
           functionResponse: {
             name: "consultar_pagos_recientes",
             response: { pagos: ultimosPagos }
+          }
+        }]);
+      } else if (call.name === "obtener_resumen_estadistico") {
+        const aggr = await prisma.pago.aggregate({
+          _count: { id: true },
+          _sum: { monto: true },
+          _max: { monto: true },
+          _min: { monto: true }
+        });
+        
+        result = await chatSession.sendMessage([{
+          functionResponse: {
+            name: "obtener_resumen_estadistico",
+            response: { estadisticas: aggr }
           }
         }]);
       }

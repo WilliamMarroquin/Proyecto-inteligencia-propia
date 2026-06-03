@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Configuracion {
+  id            String   @id @default(cuid())
+  emailHost     String?
+  emailPort     Int?     @default(993)
+  emailUser     String?
+  emailPassword String?
+  emailTLS      Boolean  @default(true)
+  bankSender    String?  // Ej. "notificaciones@banco.com"
+  emailKeyword  String?  // Ej. "Pago recibido" o "Cuota"
+  updatedAt     DateTime @updatedAt
+}
+
+model Pago {
+  id             String   @id @default(cuid())
+  nombreCliente  String
+  monto          Float
+  fecha          DateTime
+  referencia     String?
+  estado         String   @default("completado")
+  createdAt      DateTime @default(now())
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  role      String   // "user" o "assistant"
+  content   String
+  createdAt DateTime @default(now())
+}

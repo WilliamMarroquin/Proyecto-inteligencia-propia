@@ -10,6 +10,7 @@ export default function AsistentePro() {
   const [isListening, setIsListening] = useState(true);
   const [transcript, setTranscript] = useState("");
   const [aiResponse, setAiResponse] = useState("¡Hola! Soy tu Asistente Pro de Órbita Enterprise. Estoy escuchando...");
+  const [sessionId, setSessionId] = useState<string | null>(null);
   
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -91,9 +92,13 @@ export default function AsistentePro() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message, sessionId })
       });
       const data = await res.json();
+      
+      if (data.sessionId && data.sessionId !== sessionId) {
+        setSessionId(data.sessionId);
+      }
       
       if (data.reply) {
         setAiResponse(data.reply);

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Draggable from "react-draggable";
 import { useRouter } from "next/navigation";
-import { Mic, X, Send, Maximize2, Minimize2, MessageSquare, Volume2, VolumeX } from "lucide-react";
+import { Mic, X, Send, Maximize2, Minimize2, MessageSquare, Volume2, VolumeX, List, Plus } from "lucide-react";
 
 export default function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +13,10 @@ export default function FloatingChat() {
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<{id: string, title: string, updatedAt: string}[]>([]);
+  const [showSessions, setShowSessions] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -39,15 +43,26 @@ export default function FloatingChat() {
   };
 
   useEffect(() => {
-    fetch('/api/chat/history')
+    fetch('/api/chat/sessions')
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setMessages(data);
-        } else {
-          setMessages([{ role: 'assistant', content: '¡Hola! Soy tu asistente de Órbita Enterprise. ¿En qué te puedo ayudar hoy?' }]);
-        }
+        if (Array.isArray(data)) setSessions(data);
       });
+  }, [showSessions, isOpen]);
+
+  useEffect(() => {
+    if (sessionId) {
+      fetch(`/api/chat/history?sessionId=${sessionId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setMessages(data);
+          }
+        });
+    } else {
+      setMessages([{ role: 'assistant', content: '¡Hola! Soy tu asistente de Órbita Enterprise. ¿En qué te puedo ayudar hoy?' }]);
+    }
+  }, [sessionId]);
 
     if (typeof window !== 'undefined') {
       synthRef.current = window.speechSynthesis;
@@ -124,9 +139,13 @@ export default function FloatingChat() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msgToSend })
+        body: JSON.stringify({ message: msgToSend, sessionId })
       });
       const data = await res.json();
+      
+      if (data.sessionId && data.sessionId !== sessionId) {
+        setSessionId(data.sessionId);
+      }
       
       if (data.reply) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
@@ -244,6 +263,9 @@ export default function FloatingChat() {
             Asistente Órbita
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={() => setShowSessions(!showSessions)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }} title="Historial">
+              <List size={16} />
+            </button>
             <button onClick={() => setVoiceEnabled(!voiceEnabled)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }} title={voiceEnabled ? "Silenciar asistente" : "Activar voz"}>
               {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             </button>
@@ -257,7 +279,27 @@ export default function FloatingChat() {
         </div>
 
         {/* Body */}
-        {!isMinimized && (
+        {!isMinimized && showSessions && (
+          <div style={{ flex: 1, overflowY: 'auto', backgroundColor: 'var(--background)', display: 'flex', flexDirection: 'column' }}>
+            <button 
+              onClick={() => { setSessionId(null); setShowSessions(false); }}
+              style={{ padding: '1rem', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--primary)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+            >
+              <Plus size={16} /> Nueva Conversación
+            </button>
+            {sessions.map(s => (
+              <button 
+                key={s.id}
+                onClick={() => { setSessionId(s.id); setShowSessions(false); }}
+                style={{ padding: '1rem', borderBottom: '1px solid var(--border)', backgroundColor: sessionId === s.id ? 'var(--secondary)' : 'transparent', color: sessionId === s.id ? 'white' : 'var(--foreground)', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'block', width: '100%' }}
+              >
+                <div style={{ fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>{new Date(s.updatedAt).toLocaleDateString()}</div>
+              </button>
+            ))}
+          </div>
+        )}
+        {!isMinimized && !showSessions && (
           <>
             <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: 'var(--background)' }}>
               {messages.map((msg, idx) => (

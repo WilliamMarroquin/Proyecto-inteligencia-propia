@@ -1,12 +1,23 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export const dynamic = "force-dynamic";
+
+export async function GET(req: Request) {
   try {
-    const history = await prisma.chatMessage.findMany({
+    const { searchParams } = new URL(req.url);
+    const sessionId = searchParams.get('sessionId');
+
+    if (!sessionId) {
+      return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+    }
+
+    const messages = await prisma.chatMessage.findMany({
+      where: { sessionId },
       orderBy: { createdAt: 'asc' }
     });
-    return NextResponse.json(history);
+    
+    return NextResponse.json(messages);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -32,11 +32,22 @@ model Pago {
   createdAt      DateTime @default(now())
 }
 
+model ChatSession {
+  id        String        @id @default(cuid())
+  title     String        @default("Nueva Conversación")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  ChatMessage[]
+}
+
 model ChatMessage {
   id        String   @id @default(cuid())
   role      String   // "user" o "assistant"
   content   String   @db.Text
   createdAt DateTime @default(now())
+  
+  sessionId String?
+  session   ChatSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model RespaldoExcel {

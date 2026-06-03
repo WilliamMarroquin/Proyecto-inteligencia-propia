@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
 
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
@@ -58,7 +58,7 @@ SI EL USUARIO PREGUNTA POR PAGOS O DATOS ESPECÍFICOS, USA LA HERRAMIENTA 'consu
         functionDeclarations: [{
           name: "consultar_pagos_recientes",
           description: "Obtiene los últimos 20 pagos registrados en la base de datos (nombres de clientes, montos, fechas y estados). Úsalo cuando te pregunten sobre quién pagó, cuánto pagaron, o detalles de pagos recientes.",
-          parameters: { type: "OBJECT", properties: {} }
+          parameters: { type: SchemaType.OBJECT, properties: {} }
         }]
       }]
     });

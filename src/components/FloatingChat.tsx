@@ -64,6 +64,7 @@ export default function FloatingChat() {
     }
   }, [sessionId]);
 
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       synthRef.current = window.speechSynthesis;
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;

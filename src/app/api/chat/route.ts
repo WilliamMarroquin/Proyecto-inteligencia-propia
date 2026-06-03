@@ -38,15 +38,24 @@ export async function POST(req: Request) {
     }
 
     // 3. Obtener historial solo de ESTA sesión
-    const history = await prisma.chatMessage.findMany({
+    const rawHistory = await prisma.chatMessage.findMany({
       where: { sessionId: currentSessionId },
       orderBy: { createdAt: 'asc' }
     });
 
-    const formattedHistory = history.map(msg => ({
-      role: msg.role === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.content }]
-    }));
+    // Remove the current message we just inserted so we don't send it in history
+    rawHistory.pop();
+
+    // Guarantee strictly alternating history (Gemini requirement)
+    const formattedHistory: any[] = [];
+    let expectedRole = 'user';
+    for (const msg of rawHistory) {
+      const gRole = msg.role === 'user' ? 'user' : 'model';
+      if (gRole === expectedRole) {
+        formattedHistory.push({ role: gRole, parts: [{ text: msg.content }] });
+        expectedRole = expectedRole === 'user' ? 'model' : 'user';
+      }
+    }
 
     // 4. Inicializar modelo con Herramientas (Function Calling)
     const model = genAI.getGenerativeModel({ 
@@ -63,8 +72,7 @@ SI EL USUARIO PREGUNTA POR PAGOS O DATOS ESPECÍFICOS, USA LA HERRAMIENTA 'consu
       }]
     });
 
-    const historyWithoutLast = formattedHistory.slice(0, -1);
-    const chatSession = model.startChat({ history: historyWithoutLast });
+    const chatSession = model.startChat({ history: formattedHistory });
     
     // 5. Enviar mensaje e interceptar si Gemini quiere usar la herramienta
     let result = await chatSession.sendMessage(message);

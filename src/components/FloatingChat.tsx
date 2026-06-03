@@ -74,7 +74,6 @@ export default function FloatingChat() {
         
         recognitionRef.current.onresult = (event: any) => {
           const transcript = event.results[0][0].transcript;
-          setInput(transcript);
           setIsListening(false);
           sendMessage(undefined, transcript, sessionIdRef.current);
         };
@@ -147,6 +146,8 @@ export default function FloatingChat() {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
         if (isOpen && isMinimized) playBop();
         if (isOpen && !isMinimized) speak(data.reply);
+      } else if (data.error) {
+        setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
       }
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Error de conexión.' }]);

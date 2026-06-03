@@ -115,9 +115,13 @@ export default function AsistentePro() {
       if (data.reply) {
         setAiResponse(data.reply);
         speakWithNeuralVoice(data.reply);
+      } else if (data.error) {
+        setAiResponse("Lo siento, hubo un problema al pensar mi respuesta.");
+        speakWithNeuralVoice("Lo siento, hubo un problema técnico.");
       }
     } catch (err) {
       setAiResponse("Hubo un error de conexión.");
+      speakWithNeuralVoice("Hubo un error de conexión.");
     }
   };
 

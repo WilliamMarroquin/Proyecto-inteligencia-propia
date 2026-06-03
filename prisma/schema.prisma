@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model Configuracion {
@@ -35,6 +35,13 @@ model Pago {
 model ChatMessage {
   id        String   @id @default(cuid())
   role      String   // "user" o "assistant"
-  content   String
+  content   String   @db.Text
   createdAt DateTime @default(now())
+}
+
+model RespaldoExcel {
+  id        String   @id @default(cuid())
+  nombre    String
+  url       String   @db.Text // URL de Cloudinary o Supabase
+  fecha     DateTime @default(now())
 }

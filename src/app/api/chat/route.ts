@@ -60,11 +60,14 @@ export async function POST(req: Request) {
     // 4. Inicializar modelo con Herramientas (Function Calling)
     const model = genAI.getGenerativeModel({ 
       model: "gemini-flash-lite-latest",
-      systemInstruction: `Eres "Órbita" (ahora llamado Finasist AI), un asistente de voz empresarial experto en contabilidad. Tu objetivo es responder preguntas sobre los datos sincronizados del banco.
+      systemInstruction: `Eres "Órbita" (ahora llamado Finasist AI), un asistente de voz empresarial experto en contabilidad. Tu objetivo es responder preguntas sobre los datos sincronizados del banco y la cartera de clientes.
 MUY IMPORTANTE: Tus respuestas deben ser CORTAS, directas y conversacionales.
 FORMATO DE NÚMEROS: ESCRIBE SIEMPRE LOS NÚMEROS Y FECHAS USANDO DÍGITOS (Ejemplo: "Q4,553.12" y "13/06/2026"). NUNCA escribas los números con letras (no digas "cuatro mil").
 LA MONEDA SIEMPRE ES QUETZALES (GTQ). Nunca digas pesos ni dólares. Cuando hables de dinero, di "quetzales" o usa "Q".
-SI EL USUARIO PREGUNTA POR PAGOS RECIENTES O LISTAS, USA 'consultar_pagos_recientes'. SI PREGUNTA POR TOTALES, PAGO MÁS ALTO, MÁS BAJO O ESTADÍSTICAS GLOBALES, USA 'obtener_resumen_estadistico'.`,
+- SI PREGUNTAN POR PAGOS RECIENTES O LISTAS, USA 'consultar_pagos_recientes'.
+- SI PREGUNTAN POR TOTALES, PAGO MÁS ALTO, MÁS BAJO O ESTADÍSTICAS GLOBALES, USA 'obtener_resumen_estadistico'.
+- SI PREGUNTAN QUIÉNES ESTÁN EN MORA O QUIÉNES DEBEN DINERO, USA 'consultar_morosos'.
+- SI PREGUNTAN POR EL ESTADO ESPECÍFICO DE UN CLIENTE, USA 'consultar_estado_cliente'.`,
       tools: [{
         functionDeclarations: [
           {
@@ -76,6 +79,22 @@ SI EL USUARIO PREGUNTA POR PAGOS RECIENTES O LISTAS, USA 'consultar_pagos_recien
             name: "obtener_resumen_estadistico",
             description: "Obtiene estadísticas de TODA la base de datos (total de pagos, suma total de ingresos, pago máximo y mínimo). Úsalo cuando pregunten por el pago más alto, el total de dinero recaudado, o cuántos registros hay en total.",
             parameters: { type: SchemaType.OBJECT, properties: {} }
+          },
+          {
+            name: "consultar_morosos",
+            description: "Obtiene la lista de clientes que están actualmente en mora (tienen atrasos en su convenio). Úsalo cuando pregunten quiénes deben dinero, quiénes no han pagado, o quiénes están en mora.",
+            parameters: { type: SchemaType.OBJECT, properties: {} }
+          },
+          {
+            name: "consultar_estado_cliente",
+            description: "Obtiene el estado de deuda y pagos de un cliente específico por su nombre.",
+            parameters: { 
+              type: SchemaType.OBJECT, 
+              properties: {
+                nombreCliente: { type: SchemaType.STRING, description: "Nombre del cliente a buscar" }
+              },
+              required: ["nombreCliente"]
+            }
           }
         ]
       }]
@@ -116,6 +135,51 @@ SI EL USUARIO PREGUNTA POR PAGOS RECIENTES O LISTAS, USA 'consultar_pagos_recien
           functionResponse: {
             name: "obtener_resumen_estadistico",
             response: { estadisticas: aggr }
+          }
+        }]);
+      } else if (call.name === "consultar_morosos" || call.name === "consultar_estado_cliente") {
+        const args = call.args as any;
+        const nombreBuscado = args?.nombreCliente?.toLowerCase();
+        
+        const clientes = await prisma.cliente.findMany({
+          include: { convenios: true, pagos: true }
+        });
+
+        const resultados = [];
+
+        for (const cliente of clientes) {
+          if (nombreBuscado && !cliente.nombre.toLowerCase().includes(nombreBuscado)) continue;
+
+          const convenio = cliente.convenios[0];
+          const pagosTotales = cliente.pagos.reduce((acc, pago) => acc + pago.monto, 0);
+          
+          let mesesAtraso = 0;
+          let saldoPendiente = 0;
+
+          if (convenio) {
+            const mesesTranscurridos = Math.max(1, Math.floor((new Date().getTime() - new Date(convenio.createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30)));
+            const mesesEfectivos = mesesTranscurridos < 2 ? 6 : mesesTranscurridos; 
+            const deudaTotal = mesesEfectivos * convenio.montoCuota;
+            saldoPendiente = deudaTotal - pagosTotales;
+            if (saldoPendiente > 0) mesesAtraso = Math.floor(saldoPendiente / convenio.montoCuota);
+          }
+
+          if (call.name === "consultar_estado_cliente" || (call.name === "consultar_morosos" && mesesAtraso > 0)) {
+            resultados.push({
+              nombre: cliente.nombre,
+              pagosRealizados: cliente.pagos.length,
+              totalPagado: pagosTotales,
+              mesesAtraso: mesesAtraso,
+              saldoVencido: saldoPendiente > 0 ? saldoPendiente : 0,
+              estado: mesesAtraso > 0 ? "Moroso" : "Al dia"
+            });
+          }
+        }
+
+        result = await chatSession.sendMessage([{
+          functionResponse: {
+            name: call.name,
+            response: { datos: resultados.length > 0 ? resultados : "No se encontraron resultados." }
           }
         }]);
       }

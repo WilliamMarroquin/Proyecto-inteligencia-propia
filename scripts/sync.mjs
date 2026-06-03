@@ -153,21 +153,51 @@ export async function runSync() {
                             const pagosData = parseExcelBuffer(att.content);
                             console.log(`Se extrajeron ${pagosData.length} registros del Excel.`);
                             
-                            const insertData = pagosData.map(pago => ({
-                                nombreCliente: pago.nombreCliente,
-                                monto: pago.monto,
-                                fecha: pago.fecha,
-                                referencia: pago.referencia,
-                                estado: 'completado'
-                            }));
-
-                            if (insertData.length > 0) {
-                                await prisma.pago.createMany({
-                                    data: insertData
+                            for (const pago of pagosData) {
+                                // PROTOTIPO: Buscar cliente o crearlo automáticamente
+                                let cliente = await prisma.cliente.findFirst({
+                                    where: { nombre: pago.nombreCliente }
                                 });
-                                pagosInsertados += insertData.length;
-                                console.log(`Se insertaron ${insertData.length} registros en la BD.`);
+                                
+                                let convenioId = null;
+                                
+                                if (!cliente) {
+                                    cliente = await prisma.cliente.create({
+                                        data: {
+                                            nombre: pago.nombreCliente,
+                                            email: 'mock@example.com',
+                                            telefono: '5555-5555'
+                                        }
+                                    });
+                                    
+                                    // Crear convenio mock
+                                    const convenio = await prisma.convenio.create({
+                                        data: {
+                                            clienteId: cliente.id,
+                                            montoCuota: pago.monto > 0 ? pago.monto : 1000.00, // asume cuota = pago
+                                            diaCorte: 15
+                                        }
+                                    });
+                                    convenioId = convenio.id;
+                                } else {
+                                    const convenios = await prisma.convenio.findMany({ where: { clienteId: cliente.id }});
+                                    if (convenios.length > 0) convenioId = convenios[0].id;
+                                }
+
+                                await prisma.pago.create({
+                                    data: {
+                                        nombreCliente: pago.nombreCliente,
+                                        monto: pago.monto,
+                                        fecha: pago.fecha,
+                                        referencia: pago.referencia,
+                                        estado: 'completado',
+                                        clienteId: cliente.id,
+                                        convenioId: convenioId
+                                    }
+                                });
+                                pagosInsertados++;
                             }
+                            console.log(`Se insertaron ${pagosInsertados} registros enlazados a Clientes en la BD.`);
                         }
                     }
                 } else {

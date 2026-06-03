@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
     // 4. Inicializar modelo con Herramientas (Function Calling)
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash",
+      model: "gemini-flash-latest",
       systemInstruction: `Eres "Órbita", un asistente de voz empresarial experto en contabilidad. Tu objetivo es responder preguntas sobre los datos sincronizados del banco.
 MUY IMPORTANTE: Tus respuestas deben ser CORTAS, directas y conversacionales, porque serán leídas por un sintetizador de voz. No uses listas largas ni formatos complejos.
 SI EL USUARIO PREGUNTA POR PAGOS O DATOS ESPECÍFICOS, USA LA HERRAMIENTA 'consultar_pagos_recientes'. De lo contrario, responde normalmente.`,

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { TrendingUp, Users, DollarSign, Activity } from "lucide-react";
 import DashboardChart from "@/components/DashboardChart";
+import { formatToGuatemalaDate } from "@/lib/dateUtils";
 
 export const dynamic = "force-dynamic";
 

@@ -58,6 +58,8 @@ export async function GET(req: Request) {
     // Generar correo dinámico para cada moroso y enviarlo
     let enviados = 0;
     for (const m of morosos) {
+      if (!m.email) continue; // Skip if no email is provided
+
       // Plantilla inteligente dinámica (Recordatorio Automático)
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">

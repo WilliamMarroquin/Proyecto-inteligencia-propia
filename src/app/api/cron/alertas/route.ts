@@ -7,22 +7,17 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const config = await prisma.configuracion.findFirst();
-    if (!config || !config.emailUser || !config.emailPassword) {
-      return NextResponse.json({ error: "Configuración de correo no encontrada" }, { status: 400 });
+    if (!config || !config.alertaEmailUser || !config.alertaEmailPassword) {
+      return NextResponse.json({ error: "Configuración de correo de alertas no encontrada (Ve a Ajustes -> Apartado 2)" }, { status: 400 });
     }
 
-    // Usaremos el mismo host IMAP pero asumiendo que es cPanel/estándar donde IMAP/SMTP comparten host.
-    let smtpHost: string = config.emailHost || '';
-    if (smtpHost.includes('imap.gmail.com')) smtpHost = 'smtp.gmail.com';
-    if (smtpHost.includes('outlook.office365.com')) smtpHost = 'smtp.office365.com';
-
     const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpHost.includes('gmail') ? 465 : 587,
-      secure: smtpHost.includes('gmail') ? true : false,
+      host: 'smtp.gmail.com', // Asumiremos Gmail/Google Workspace por defecto
+      port: 465,
+      secure: true,
       auth: {
-        user: config.emailUser,
-        pass: config.emailPassword
+        user: config.alertaEmailUser,
+        pass: config.alertaEmailPassword
       }
     });
 
@@ -60,38 +55,40 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: "No hay clientes en mora actualmente." });
     }
 
-    // Generar correo
-    let emailHtml = `
-      <h2>Alerta de Morosidad - Cartera UDEVIPO</h2>
-      <p>El sistema ha detectado <strong>${morosos.length}</strong> clientes con atrasos en sus convenios de pago al día de hoy.</p>
-      <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-        <tr style="background-color: #f3f4f6;">
-          <th>Cliente</th>
-          <th>Meses de Atraso</th>
-          <th>Saldo Vencido (GTQ)</th>
-        </tr>
-    `;
-
+    // Generar correo dinámico para cada moroso y enviarlo
+    let enviados = 0;
     for (const m of morosos) {
-      emailHtml += `
-        <tr>
-          <td>${m.nombre}</td>
-          <td style="color: red; font-weight: bold; text-align: center;">${m.mesesAtraso} meses</td>
-          <td style="text-align: right;">Q${m.saldoPendiente.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-        </tr>
+      // Plantilla inteligente dinámica (Recordatorio Automático)
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <h2 style="color: #ef4444; border-bottom: 2px solid #ef4444; padding-bottom: 10px;">Aviso Importante: Atraso en su Convenio</h2>
+          <p>Estimado/a <strong>${m.nombre}</strong>,</p>
+          <p>Le escribimos de parte de UDEVIPO para recordarle amablemente que su convenio de pagos presenta un atraso de <strong>${m.mesesAtraso} meses</strong>.</p>
+          <div style="background-color: #fef2f2; padding: 15px; border-radius: 6px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 16px;">Saldo vencido a la fecha:</p>
+            <p style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: #ef4444;">Q${m.saldoPendiente.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+          </div>
+          <p>Le invitamos a regularizar su situación lo antes posible para evitar recargos o penalizaciones sobre su convenio.</p>
+          <p>Si ya realizó el pago, por favor ignore este mensaje.</p>
+          <br/>
+          <p>Atentamente,<br/><strong>Departamento de Cartera - UDEVIPO</strong></p>
+        </div>
       `;
+
+      try {
+        await transporter.sendMail({
+          from: `"Cartera UDEVIPO" <${config.alertaEmailUser}>`,
+          to: m.email,
+          subject: `Aviso de Atraso en Convenio - UDEVIPO`,
+          html: emailHtml
+        });
+        enviados++;
+      } catch (err) {
+        console.error(`Error enviando a ${m.email}:`, err);
+      }
     }
-    emailHtml += `</table><p>Por favor, inicie las gestiones de cobro correspondientes.</p><p><em>Este es un correo generado automáticamente por Finasist AI.</em></p>`;
 
-    // Enviar alerta al mismo correo configurado (o a los asesores en el futuro)
-    await transporter.sendMail({
-      from: `"Finasist AI - Alertas" <${config.emailUser}>`,
-      to: config.emailUser, // Enviar al administrador
-      subject: `🚨 Alerta de Mora: ${morosos.length} clientes con atraso`,
-      html: emailHtml
-    });
-
-    return NextResponse.json({ success: true, message: `Alerta enviada para ${morosos.length} morosos.` });
+    return NextResponse.json({ success: true, message: `Se enviaron recordatorios automáticos a ${enviados} clientes morosos.` });
   } catch (error: any) {
     console.error('Error enviando alertas:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

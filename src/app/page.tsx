@@ -143,7 +143,7 @@ export default async function Home() {
                 <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
                   <div>
                     <p style={{ margin: '0 0 0.25rem 0', fontWeight: 500 }}>{tx.nombreCliente}</p>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--secondary)' }}>{new Date(tx.fecha).toLocaleDateString('es-ES')}</p>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--secondary)' }}>{formatToGuatemalaDate(tx.fecha)}</p>
                   </div>
                   <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>
                     +Q{tx.monto.toLocaleString('en-US', { minimumFractionDigits: 2 })}

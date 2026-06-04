@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { FileSpreadsheet, Download, Calendar } from "lucide-react";
+import { formatToGuatemalaDateTime } from '@/lib/dateUtils';
 
 const prisma = new PrismaClient();
 
@@ -51,9 +52,7 @@ export default async function ArchivosPage() {
                   </h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--secondary)', fontSize: '0.8rem' }}>
                     <Calendar size={14} />
-                    {new Date(archivo.fecha).toLocaleDateString('es-ES', { 
-                      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                    })}
+                    {formatToGuatemalaDateTime(archivo.fecha)}
                   </div>
                 </div>
               </div>

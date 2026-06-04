@@ -19,18 +19,22 @@ export const metadata: Metadata = {
 
 import TopNav from "@/components/TopNav";
 import FloatingChat from "@/components/FloatingChat";
+import { getSession } from "@/lib/auth";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
+  const permisos = session?.permisos || [];
+
   return (
     <html lang="es">
       <body>
-        <TopNav />
+        <TopNav permisos={permisos} />
         {children}
-        <FloatingChat />
+        {permisos.includes("ia") && <FloatingChat />}
       </body>
     </html>
   );

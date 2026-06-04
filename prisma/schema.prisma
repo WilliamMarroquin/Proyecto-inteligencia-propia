@@ -17,9 +17,59 @@ model Configuracion {
   emailUser     String?
   emailPassword String?
   emailTLS      Boolean  @default(true)
-  bankSender    String?  // Ej. "notificaciones@banco.com"
-  emailKeyword  String?  // Ej. "Pago recibido" o "Cuota"
+  bankSender    String?
+  emailKeyword  String?
+  
+  // Apartado 1: Tokens y Sistema
+  tokenEmailUser     String?
+  tokenEmailPassword String?
+  tokenFirmaUrl      String?
+  tokenLeyenda       String? @db.Text // Por si el super admin quiere poner un mensajito extra de bienvenida
+  
+  // Apartado 2: Alertas de Morosidad (Recordatorios automáticos)
+  alertaEmailUser     String?
+  alertaEmailPassword String?
+  
   updatedAt     DateTime @updatedAt
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nombre    String
+  apellidos String?
+  fotografia String? @db.Text
+  email     String   @unique
+  password  String   // Hashed con bcrypt
+  telefono  String?
+  rol       String   @default("ASISTENTE") // SUPER_ADMIN, JEFE, ASISTENTE, AUDITOR
+  permisos  Json     // ["dashboard", "cartera", "archivos", "datos", "ia", "ajustes", "usuarios", "auditoria"]
+  estado    String   @default("activo")
+  
+  otps      OTP[]
+  auditorias Auditoria[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OTP {
+  id        String   @id @default(cuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  codigo    String
+  expiraEn  DateTime
+  usado     Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+}
+
+model Auditoria {
+  id        String   @id @default(cuid())
+  usuarioId String?
+  usuario   Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  accion    String   // Ej: "LOGIN", "CREATE_USER", "UPDATE_QUOTA"
+  detalles  String   @db.Text
+  createdAt DateTime @default(now())
 }
 
 model Cliente {

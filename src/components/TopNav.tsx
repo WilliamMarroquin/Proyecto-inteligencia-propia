@@ -4,18 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Database, Settings, ShieldCheck, FileSpreadsheet, Users } from "lucide-react";
 
-export default function TopNav() {
+export default function TopNav({ permisos = [] }: { permisos?: string[] }) {
   const pathname = usePathname();
 
   if (pathname === '/login') return null;
 
-  const navItems = [
-    { name: "Dashboard", href: "/", icon: <LayoutDashboard size={20} /> },
-    { name: "Cartera", href: "/cartera", icon: <Users size={20} /> },
-    { name: "Archivos", href: "/archivos", icon: <FileSpreadsheet size={20} /> },
-    { name: "Datos", href: "/datos", icon: <Database size={20} /> },
-    { name: "Ajustes", href: "/configuracion", icon: <Settings size={20} /> },
-  ];
+  const navItems = [];
+  if (permisos.includes("dashboard")) navItems.push({ name: "Dashboard", href: "/", icon: <LayoutDashboard size={20} /> });
+  if (permisos.includes("cartera")) navItems.push({ name: "Cartera", href: "/cartera", icon: <Users size={20} /> });
+  if (permisos.includes("archivos")) navItems.push({ name: "Archivos", href: "/archivos", icon: <FileSpreadsheet size={20} /> });
+  if (permisos.includes("datos")) navItems.push({ name: "Datos", href: "/datos", icon: <Database size={20} /> });
+  if (permisos.includes("usuarios")) navItems.push({ name: "Usuarios", href: "/usuarios", icon: <Users size={20} /> });
+  if (permisos.includes("auditoria")) navItems.push({ name: "Auditoría", href: "/auditoria", icon: <ShieldCheck size={20} /> });
+  if (permisos.includes("ajustes")) navItems.push({ name: "Ajustes", href: "/configuracion", icon: <Settings size={20} /> });
 
   return (
     <header style={{ 
@@ -66,6 +67,14 @@ export default function TopNav() {
               </Link>
             );
           })}
+          
+          <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border)', margin: '0 0.5rem', alignSelf: 'center' }}></div>
+
+          <form action="/api/auth/logout" method="POST" style={{ display: 'flex', alignItems: 'center' }}>
+            <button type="submit" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}>
+              Salir
+            </button>
+          </form>
         </nav>
       </div>
     </header>

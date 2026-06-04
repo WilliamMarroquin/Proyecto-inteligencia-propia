@@ -169,63 +169,136 @@ export default function UsuariosPage() {
       </div>
 
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-              <h2 style={{ margin: 0 }}>{editingId ? "Editar Usuario" : "Crear Nuevo Usuario"}</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', padding: 0, display: 'flex', flexDirection: 'column' }}>
+            
+            {/* Modal Header */}
+            <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--card-bg)', position: 'sticky', top: 0, zIndex: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ padding: '0.5rem', backgroundColor: 'var(--primary)', color: 'white', borderRadius: '8px' }}>
+                  {editingId ? <Edit size={20} /> : <UserPlus size={20} />}
+                </div>
+                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{editingId ? "Editar Perfil de Usuario" : "Crear Nuevo Usuario"}</h2>
+              </div>
+              <button onClick={() => setShowModal(false)} style={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: '50%', padding: '0.5rem', cursor: 'pointer', color: 'var(--secondary)' }}><X size={20} /></button>
             </div>
 
-            <form onSubmit={handleSave}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div><label className="label">Nombres</label><input type="text" className="input" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} required /></div>
-                <div><label className="label">Apellidos</label><input type="text" className="input" value={formData.apellidos} onChange={e => setFormData({...formData, apellidos: e.target.value})} /></div>
-                <div><label className="label">Correo Electrónico</label><input type="email" className="input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required /></div>
-                <div><label className="label">Teléfono</label><input type="text" className="input" value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} /></div>
-                <div>
-                  <label className="label">Contraseña {editingId && "(Dejar en blanco para no cambiar)"}</label>
-                  <input type="password" className="input" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required={!editingId} />
+            {/* Modal Body */}
+            <form onSubmit={handleSave} style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              
+              {/* Información Personal y Foto */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+                
+                {/* Columna Foto */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid var(--background)', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    {formData.fotografia ? (
+                      <img src={formData.fotografia} alt="Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <Users size={48} color="var(--secondary)" />
+                    )}
+                  </div>
+                  <label className="btn" style={{ width: '100%', textAlign: 'center', cursor: 'pointer', backgroundColor: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--border)' }}>
+                    {loading ? "Subiendo..." : "Subir Fotografía"}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: 'none' }}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setLoading(true);
+                        const formDataPayload = new FormData();
+                        formDataPayload.append('file', file);
+                        try {
+                          const res = await fetch('/api/upload', { method: 'POST', body: formDataPayload });
+                          const data = await res.json();
+                          if (data.url) setFormData(prev => ({ ...prev, fotografia: data.url }));
+                          else alert("Error al subir imagen");
+                        } catch (err) {
+                          alert("Error de conexión al subir");
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                    />
+                  </label>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--secondary)', textAlign: 'center', margin: 0 }}>Recomendado: 400x400px (JPG/PNG)</p>
                 </div>
-                <div>
-                  <label className="label">URL Fotografía</label>
-                  <input type="text" className="input" placeholder="https://..." value={formData.fotografia} onChange={e => setFormData({...formData, fotografia: e.target.value})} />
+
+                {/* Columna Datos Personales */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignContent: 'start' }}>
+                  <h3 style={{ gridColumn: '1 / -1', margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--foreground)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Datos Personales</h3>
+                  
+                  <div><label className="label">Nombres *</label><input type="text" className="input" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} required placeholder="Ej. Juan Carlos" /></div>
+                  <div><label className="label">Apellidos *</label><input type="text" className="input" value={formData.apellidos} onChange={e => setFormData({...formData, apellidos: e.target.value})} required placeholder="Ej. Pérez" /></div>
+                  
+                  <div><label className="label">Correo Electrónico *</label><input type="email" className="input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required placeholder="juan@empresa.com" /></div>
+                  <div><label className="label">Teléfono</label><input type="text" className="input" value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} placeholder="+502 12345678" /></div>
                 </div>
+              </div>
+
+              {/* Roles y Seguridad */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', backgroundColor: 'var(--background)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <h3 style={{ gridColumn: '1 / -1', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Rol y Seguridad</h3>
+                
+                <div>
+                  <label className="label">Contraseña {editingId && <span style={{fontSize:'0.8em', color:'var(--secondary)'}}>(Opcional)</span>}</label>
+                  <input type="password" className="input" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required={!editingId} placeholder={editingId ? "Dejar en blanco para conservar" : "Contraseña segura"} />
+                </div>
+                
                 <div>
                   <label className="label">Rol en el Sistema</label>
                   <select className="input" value={formData.rol} onChange={e => setFormData({...formData, rol: e.target.value})}>
-                    <option value="SUPER_ADMIN">Super Administrador</option>
-                    <option value="JEFE">Jefe de Área</option>
-                    <option value="ASISTENTE">Asistente</option>
-                    <option value="AUDITOR">Auditor</option>
+                    <option value="SUPER_ADMIN">🌟 Super Administrador</option>
+                    <option value="JEFE">👔 Jefe de Área</option>
+                    <option value="ASISTENTE">💼 Asistente / Operador</option>
+                    <option value="AUDITOR">🛡️ Auditor</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="label">Estado</label>
-                  <select className="input" value={formData.estado} onChange={e => setFormData({...formData, estado: e.target.value})}>
-                    <option value="activo">Activo</option>
-                    <option value="inactivo">Inactivo</option>
+                  <label className="label">Estado de la Cuenta</label>
+                  <select className="input" value={formData.estado} onChange={e => setFormData({...formData, estado: e.target.value})} style={{ borderColor: formData.estado === 'activo' ? 'var(--primary)' : '#ef4444' }}>
+                    <option value="activo">🟢 Activo (Puede ingresar)</option>
+                    <option value="inactivo">🔴 Inactivo (Bloqueado)</option>
                   </select>
                 </div>
               </div>
 
-              <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Permisos Modulares (Visibilidad)</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', backgroundColor: 'var(--background)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                {AVAILABLE_PERMISSIONS.map(p => (
-                  <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={formData.permisos.includes(p.id)}
-                      onChange={() => handlePermissionChange(p.id)}
-                      style={{ width: '18px', height: '18px' }}
-                    />
-                    {p.label}
-                  </label>
-                ))}
+              {/* Permisos Modulares */}
+              <div>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Shield size={18} color="var(--primary)"/> Permisos Modulares (Visibilidad de Pantallas)</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {AVAILABLE_PERMISSIONS.map(p => (
+                    <label key={p.id} style={{ 
+                      display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer',
+                      padding: '1rem', borderRadius: '8px', border: `1px solid ${formData.permisos.includes(p.id) ? 'var(--primary)' : 'var(--border)'}`,
+                      backgroundColor: formData.permisos.includes(p.id) ? 'rgba(139, 92, 246, 0.05)' : 'var(--background)',
+                      transition: 'all 0.2s'
+                    }}>
+                      <div style={{ 
+                        width: '24px', height: '24px', borderRadius: '6px', border: `2px solid ${formData.permisos.includes(p.id) ? 'var(--primary)' : 'var(--secondary)'}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: formData.permisos.includes(p.id) ? 'var(--primary)' : 'transparent'
+                      }}>
+                        {formData.permisos.includes(p.id) && <Check size={16} color="white" strokeWidth={3} />}
+                      </div>
+                      <span style={{ fontWeight: formData.permisos.includes(p.id) ? 600 : 400, color: formData.permisos.includes(p.id) ? 'var(--foreground)' : 'var(--secondary)' }}>
+                        {p.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
-              <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                <button type="button" onClick={() => setShowModal(false)} className="btn" style={{ backgroundColor: 'transparent', color: 'var(--foreground)', border: '1px solid var(--border)' }}>Cancelar</button>
-                <button type="submit" className="btn">Guardar Usuario</button>
+              {/* Acciones */}
+              <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <button type="button" onClick={() => setShowModal(false)} className="btn" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--border)' }}>Cancelar Operación</button>
+                <button type="submit" className="btn" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 2rem' }}>
+                  {editingId ? <Edit size={18} /> : <UserPlus size={18} />}
+                  {editingId ? "Actualizar Usuario" : "Crear Usuario"}
+                </button>
               </div>
             </form>
           </div>

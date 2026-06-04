@@ -39,6 +39,8 @@ export async function POST(req: Request) {
         telefono: data.telefono,
         fotografia: data.fotografia,
         rol: data.rol,
+        permisos: data.permisos,
+        estado: 'activo'
       }
     });
 

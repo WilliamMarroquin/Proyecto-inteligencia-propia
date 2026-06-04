@@ -48,8 +48,9 @@ export async function fetchEmailsAndExtractExcel(config: any) {
           
           if (parsed.attachments && parsed.attachments.length > 0) {
             for (const att of parsed.attachments) {
-              // Verificamos que sea un Excel
-              if (att.filename && att.filename.endsWith('.xlsx')) {
+              // Verificamos el formato configurado (por defecto .xlsx)
+              const ext = config.bankFileExtension ? `.${config.bankFileExtension.replace(/^\./, '')}` : '.xlsx';
+              if (att.filename && att.filename.toLowerCase().endsWith(ext.toLowerCase())) {
                 attachments.push({
                   filename: att.filename,
                   content: att.content as Buffer

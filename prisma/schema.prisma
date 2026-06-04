@@ -19,6 +19,7 @@ model Configuracion {
   emailTLS      Boolean  @default(true)
   bankSender    String?
   emailKeyword  String?
+  bankFileExtension String? @default("xlsx")
   
   // Apartado 1: Tokens y Sistema
   tokenEmailUser     String?

@@ -18,6 +18,7 @@ export default async function ConfiguracionPage(props: { searchParams: Promise<{
       emailPassword: formData.get("emailPassword") as string || config?.emailPassword || '',
       bankSender: formData.get("bankSender") as string || config?.bankSender || '',
       emailKeyword: formData.get("emailKeyword") as string || config?.emailKeyword || '',
+      bankFileExtension: formData.get("bankFileExtension") as string || config?.bankFileExtension || 'xlsx',
       tokenEmailUser: formData.get("tokenEmailUser") as string || config?.tokenEmailUser || '',
       tokenEmailPassword: formData.get("tokenEmailPassword") as string || config?.tokenEmailPassword || '',
       tokenFirmaUrl: formData.get("tokenFirmaUrl") as string || config?.tokenFirmaUrl || '',
@@ -105,14 +106,23 @@ export default async function ConfiguracionPage(props: { searchParams: Promise<{
               </div>
               
               <h3 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1rem', color: 'var(--primary)' }}>Filtros de Extracción</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Correo Remitente Oficial del Banco</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Correo Remitente Oficial</label>
                   <input type="email" name="bankSender" defaultValue={config?.bankSender || ''} placeholder="notificaciones@banco.com" className="input" />
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Asunto o Etiqueta Clave</label>
                   <input type="text" name="emailKeyword" defaultValue={config?.emailKeyword || ''} placeholder="Liquidacion de pagos" className="input" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Formato del Adjunto</label>
+                  <select name="bankFileExtension" defaultValue={config?.bankFileExtension || 'xlsx'} className="input">
+                    <option value="xlsx">Excel Moderno (.xlsx)</option>
+                    <option value="csv">Texto Separado (.csv)</option>
+                    <option value="pdf">Documento PDF (.pdf)</option>
+                    <option value="xls">Excel Antiguo (.xls)</option>
+                  </select>
                 </div>
               </div>
 

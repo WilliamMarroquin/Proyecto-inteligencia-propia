@@ -184,85 +184,91 @@ export default function UsuariosPage() {
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSave} style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <form onSubmit={handleSave} style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
               
-              {/* Información Personal y Foto */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-                
-                {/* Columna Foto */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid var(--background)', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    {formData.fotografia ? (
-                      <img src={formData.fotografia} alt="Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <Users size={48} color="var(--secondary)" />
-                    )}
-                  </div>
-                  <label className="btn" style={{ width: '100%', textAlign: 'center', cursor: 'pointer', backgroundColor: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--border)' }}>
-                    {loading ? "Subiendo..." : "Subir Fotografía"}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      style={{ display: 'none' }}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setLoading(true);
-                        const formDataPayload = new FormData();
-                        formDataPayload.append('file', file);
-                        try {
-                          const res = await fetch('/api/upload', { method: 'POST', body: formDataPayload });
-                          const data = await res.json();
-                          if (data.url) setFormData(prev => ({ ...prev, fotografia: data.url }));
-                          else alert("Error al subir imagen");
-                        } catch (err) {
-                          alert("Error de conexión al subir");
-                        } finally {
-                          setLoading(false);
-                        }
-                      }}
-                    />
-                  </label>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--secondary)', textAlign: 'center', margin: 0 }}>Recomendado: 400x400px (JPG/PNG)</p>
+              {/* Foto de Perfil Centrada */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid var(--background)', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  {formData.fotografia ? (
+                    <img src={formData.fotografia} alt="Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Users size={48} color="var(--secondary)" />
+                  )}
                 </div>
+                <label className="btn" style={{ cursor: 'pointer', backgroundColor: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--border)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
+                  {loading ? "Subiendo..." : "Subir Fotografía"}
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setLoading(true);
+                      const formDataPayload = new FormData();
+                      formDataPayload.append('file', file);
+                      try {
+                        const res = await fetch('/api/upload', { method: 'POST', body: formDataPayload });
+                        const data = await res.json();
+                        if (data.url) setFormData(prev => ({ ...prev, fotografia: data.url }));
+                        else alert("Error al subir imagen");
+                      } catch (err) {
+                        alert("Error de conexión al subir");
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
 
-                {/* Columna Datos Personales */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignContent: 'start' }}>
-                  <h3 style={{ gridColumn: '1 / -1', margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--foreground)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Datos Personales</h3>
-                  
-                  <div><label className="label">Nombres *</label><input type="text" className="input" value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} required placeholder="Ej. Juan Carlos" /></div>
-                  <div><label className="label">Apellidos *</label><input type="text" className="input" value={formData.apellidos} onChange={e => setFormData({...formData, apellidos: e.target.value})} required placeholder="Ej. Pérez" /></div>
-                  
-                  <div><label className="label">Correo Electrónico *</label><input type="email" className="input" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required placeholder="juan@empresa.com" /></div>
-                  <div><label className="label">Teléfono</label><input type="text" className="input" value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} placeholder="+502 12345678" /></div>
+              {/* Datos Personales */}
+              <div style={{ backgroundColor: 'var(--background)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: 'var(--foreground)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Datos Personales</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Nombres *</label>
+                    <input type="text" className="input" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px' }} value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} required placeholder="Ej. Juan Carlos" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Apellidos *</label>
+                    <input type="text" className="input" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px' }} value={formData.apellidos} onChange={e => setFormData({...formData, apellidos: e.target.value})} required placeholder="Ej. Pérez" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Correo Electrónico *</label>
+                    <input type="email" className="input" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px' }} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required placeholder="juan@empresa.com" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Teléfono</label>
+                    <input type="text" className="input" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px' }} value={formData.telefono} onChange={e => setFormData({...formData, telefono: e.target.value})} placeholder="+502 12345678" />
+                  </div>
                 </div>
               </div>
 
               {/* Roles y Seguridad */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', backgroundColor: 'var(--background)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <h3 style={{ gridColumn: '1 / -1', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>Rol y Seguridad</h3>
-                
-                <div>
-                  <label className="label">Contraseña {editingId && <span style={{fontSize:'0.8em', color:'var(--secondary)'}}>(Opcional)</span>}</label>
-                  <input type="password" className="input" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required={!editingId} placeholder={editingId ? "Dejar en blanco para conservar" : "Contraseña segura"} />
-                </div>
-                
-                <div>
-                  <label className="label">Rol en el Sistema</label>
-                  <select className="input" value={formData.rol} onChange={e => setFormData({...formData, rol: e.target.value})}>
-                    <option value="SUPER_ADMIN">🌟 Super Administrador</option>
-                    <option value="JEFE">👔 Jefe de Área</option>
-                    <option value="ASISTENTE">💼 Asistente / Operador</option>
-                    <option value="AUDITOR">🛡️ Auditor</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="label">Estado de la Cuenta</label>
-                  <select className="input" value={formData.estado} onChange={e => setFormData({...formData, estado: e.target.value})} style={{ borderColor: formData.estado === 'activo' ? 'var(--primary)' : '#ef4444' }}>
-                    <option value="activo">🟢 Activo (Puede ingresar)</option>
-                    <option value="inactivo">🔴 Inactivo (Bloqueado)</option>
-                  </select>
+              <div style={{ backgroundColor: 'var(--background)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Rol y Seguridad</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Contraseña {editingId && <span style={{fontSize:'0.8em', color:'var(--secondary)'}}>(Opcional)</span>}</label>
+                    <input type="password" className="input" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px' }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required={!editingId} placeholder={editingId ? "Dejar en blanco para conservar" : "Contraseña segura"} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Rol en el Sistema</label>
+                    <select className="input" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px' }} value={formData.rol} onChange={e => setFormData({...formData, rol: e.target.value})}>
+                      <option value="SUPER_ADMIN">🌟 Super Administrador</option>
+                      <option value="JEFE">👔 Jefe de Área</option>
+                      <option value="ASISTENTE">💼 Asistente / Operador</option>
+                      <option value="AUDITOR">🛡️ Auditor</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>Estado de la Cuenta</label>
+                    <select className="input" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', borderColor: formData.estado === 'activo' ? 'var(--primary)' : '#ef4444' }} value={formData.estado} onChange={e => setFormData({...formData, estado: e.target.value})}>
+                      <option value="activo">🟢 Activo (Puede ingresar)</option>
+                      <option value="inactivo">🔴 Inactivo (Bloqueado)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

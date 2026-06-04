@@ -61,20 +61,20 @@ export default async function ConfiguracionPage(props: { searchParams: Promise<{
 
   return (
     <div className="main-container">
-      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0' }}>
+      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Settings size={28} color="var(--primary)" />
           <h1 className="title" style={{ margin: 0 }}>Panel de Ajustes Maestros</h1>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', marginBottom: '2rem', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', marginBottom: '2rem', overflowX: 'auto', maxWidth: '800px', margin: '0 auto', paddingBottom: '0.5rem' }}>
         <TabButton id="bancos" icon={Mail} label="Conexión Bancaria" />
         <TabButton id="tokens" icon={KeyRound} label="Tokens de Seguridad" />
         <TabButton id="mora" icon={AlertTriangle} label="Motor de Recordatorios" />
       </div>
 
-      <div className="card" style={{ maxWidth: '800px', padding: '2rem' }}>
+      <div className="card" style={{ maxWidth: '800px', margin: '0 auto', padding: '2.5rem' }}>
         <form action={saveConfig} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           
           {currentTab === 'bancos' && (
